@@ -5,32 +5,32 @@ const {MongoClient} = require('mongodb');
 
 class DBClient{
     constructor(){
-        const DB_HOST = 'localhost';
-        const DB_PORT = 27017;
-        const DB_DATABASE = 'files_manager';
+        const host = 'localhost';
+        const port = 27017;
+        const database = 'files_manager';
         try{
-            DB_HOST = process.env.DB_HOST
+            host = process.env.DB_HOST
         }catch(err){
             
         }
         try{
-            DB_PORT = process.env.DB_PORT
+            port = process.env.DB_PORT
         }catch(err){
         }
         try{
-            DB_DATABASE = process.env.DB_DATABASE
+            database = process.env.DB_DATABASE
         }catch(err){
         }
 
-        const uri = `mongodb://${DB_HOST}:${DB_PORT}/${DB_DATABASE}`;
+        const uri = `mongodb://${host}:${port}/${database}`;
         ///?authSource=${DB_DATABASE}
-        MongoClient.connect(uri, (err, client) => {
+        MongoClient.connect(uri, { useUnifiedTopology: true }, (err, client) => {
             if (err){
                 console.log(`Error: ${err}`)
             }
-            const database = client.db(DB_DATABASE)
-            this.users = database.collection('users')
-            this.files = database.collection('files')
+            this.db = client.db(database)
+            this.users = this.db.collection('users')
+            this.files = this.db.collection('files')
 
 
             //this.client = client
