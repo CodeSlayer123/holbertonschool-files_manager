@@ -15,14 +15,13 @@ class RedisClient{
 
     isAlive(){
 
-        //return this.client.connected
+        try{
+            this.client.ping()
+            return true
 
-        this.client.on('connect', () => {
-            const tr = true
-            //console.log(tr)
-            return tr
-        })
-        return false
+        } catch( err){
+            return false
+        }
 
     }
     async get(key){

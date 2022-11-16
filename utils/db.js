@@ -8,6 +8,8 @@ class DBClient{
         const host = 'localhost';
         const port = 27017;
         const database = 'files_manager';
+        this.connected = false
+
         try{
             host = process.env.DB_HOST
         }catch(err){
@@ -23,39 +25,31 @@ class DBClient{
         }
 
         const uri = `mongodb://${host}:${port}/${database}`;
-        ///?authSource=${DB_DATABASE}
         MongoClient.connect(uri, { useUnifiedTopology: true }, (err, client) => {
             if (err){
-                console.log(`Error: ${err}`)
+                this.isConnected(false)
+                throw new Error(`Error: ${err}`)
             }
+            this.isConnected(true)
             this.db = client.db(database)
-            this.users = this.db.collection('users')
-            this.files = this.db.collection('files')
-
-
-            //this.client = client
-            //client.close()
         })
 
-        //this.client.connect()
-        //this.database = this.client.db(DB_DATABASE)
-
+    }
+    isConnected(status){
+        this.connected = status
     }
     isAlive(){
-        return !!this.client && !!this.client.topology && this.client.topology.isConnected()
+        //console.log(this.connected)
+        return this.connected
     }
     async nbUsers(){
-        //const users = this.database.collection('users')
-        //console.log(users)
-        const count = await this.users.countDocuments()
-        console.log(count)
+        const users = this.db.collection('users')
+        const count = await users.countDocuments()
         return count
     }
     async nbFiles(){
-        //const files = this.database.collection('files')
-        const count = await this.files.countDocuments()
-        console.log(count)
-
+        const files = this.db.collection('files')
+        const count = await files.countDocuments()
         return count
     }
 }
