@@ -1,27 +1,37 @@
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
-const sha1 = require('js-sha1');
+const sha1 = require('sha1');
 
 
 class UsersController{
-    static postNew(req, response){
-        const err = new Error()
-        err.statusCode = 400
-        console.log(req.body)
-        if(!request.params.email){
-            err.message = 'Missing email'
-            throw err
+    static async postNew(request, response){
+        if(!request.body.email){
+            return response.status(400).send({"error": "Missing email"})
         }
-        if(!request.params.password){
-            err.message = 'Missing password'
-            throw err
+        if(!request.body.password){
+            return response.status(400).send({"error": "Missing password"})
         }
-        if(dbClient.db.collection('users').find({'email': request.params.email})){
-            err.message = 'Already exist'
-            throw err
+        if(await dbClient.db.collection('users').findOne({email: request.body.email})){
+            return response.status(400).send({"error": "Already exist"})
         }
-        newUser = dbClient.db.collection('users').insert_one({ 'email': request.params.email, 'topics': sha1(request.params.password)})
-        return response.status(201).send({ "id": newUser.id, "email": newUser.email})
+
+        const newUser = await dbClient.db.collection('users').insertOne({'email': request.body.email, 'topics': sha1(request.body.password)})
+        console.log({ "id": newUser.insertedId, "email": request.body.email})
+        return response.status(201).send({"id": newUser.insertedId, "email": request.body.email})
+    }
+
+    static async getMe(request, response){
+        console.log("test")
+        const token = request.headers['x-token']
+        const key = `auth_${token}`
+        const userId = redisClient.get(key)
+        const user = await dbClient.db.collection('users').findOne({_id: userId})
+        console.log(user)
+        if (!user){
+            return response.status(401).send('error: Unauthorized')
+
+        }
+        return response.status(200).send({"id":userId,"email":user.ops[0].email})
     }
 
 
