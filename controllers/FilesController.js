@@ -15,13 +15,12 @@ class FilesController{
         
         const token = request.headers['x-token']
         const key = `auth_${token}`
+        console.log('key: '+key)
         const userId = await redisClient.get(key)
+        console.log('userId: ' + userId)
         if (!userId){
-            return response.status(401).send('error: Unauthorized')
+            return response.status(401).send('error: Unauthorized1')
         }
-        //const user = await dbClient.db.collection('users').findOne({_id: userId})
-        
-
 
         //create file
         const name = request.body.name
@@ -53,7 +52,7 @@ class FilesController{
             }
         }
         if (type === 'folder'){
-            const newFile = await files.insertOne({/*'userId': userId,*/ 'name': name, 'type': type, 'isPublic': isPublic, 'parentId': parentId})
+            const newFile = await files.insertOne({'userId': userId, 'name': name, 'type': type, 'isPublic': isPublic, 'parentId': parentId})
             return response.status(201).send({
                 "id": newFile.insertedId,
                 "userId": newFile.ops[0].userId,
@@ -72,9 +71,11 @@ class FilesController{
         const localPath = `${FOLDER_PATH}/${uuid()}`
         const decode = Buffer.from(data, 'base64').toString('utf-8');
         await fs.promises.writeFile(localPath, decode);
-        const newFile = await files.insertOne({/*'userId': userId,*/ 'name': name, 'type': type, 'isPublic': isPublic, 'parentId': parentId, 'localPath': localPath})
+        const newFile = await files.insertOne({'userId': userId, 'name': name, 'type': type, 'isPublic': isPublic, 'parentId': parentId, 'localPath': localPath})
         console.log(newFile.ops[0].name)
         console.log(newFile)
+
+
         if (type === 'image'){
             const fileQueue = bull.Queue('fileQueue')
             const job = fileQueue.add({
@@ -98,122 +99,148 @@ class FilesController{
     }
     static async getShow(request, response){
         //retrieve user based on token
-        /*
+        
         const token = request.headers['x-token']
         const key = `auth_${token}`
-        const userId = redisClient.get(key)
-        const user = await dbClient.db.collection('users').findOne({_id: userId})
-        console.log(user)
-        if (!user){
-            return response.status(401).send('error: Unauthorized')
-
+        console.log('key: '+key)
+        const userId = await redisClient.get(key)
+        console.log('userId: ' + userId)
+        if (!userId){
+            return response.status(401).send('error: Unauthorized1')
         }
-        */
+
         const id = request.params.id
+        console.log('id:'+ id)
         const collection = dbClient.db.collection('files')
-        const file =  await collection.findOne({ _id: id })
+        const file =  await collection.findOne({_id: new mongo.ObjectID(id) })
+        console.log('file'+file)
         if (!file){
-            return response.status(401).send('error: Not found')
+            return response.status(404).send('error: Not found')
 
         }
         return response.status(200).send({
-            "id": newFile.insertedId,
-            "userId": newFile.ops[0].userId,
-            "name": newFile.ops[0].name,
-            "type": newFile.ops[0].type,
-            "isPublic":newFile.ops[0].isPublic,
-            "parentId": newFile.ops[0].parentId,
-        })    }
-    static getIndex(request, response){
+            "id": file._id,
+            "userId": file.userId,
+            "name": file.name,
+            "type": file.type,
+            "isPublic":file.isPublic,
+            "parentId": file.parentId,
+        })
+    }
+    static async getIndex(request, response){
         //retrieve user based on token
-        /*
+        
         const token = request.headers['x-token']
         const key = `auth_${token}`
-        const userId = redisClient.get(key)
-        const user = await dbClient.db.collection('users').findOne({_id: userId})
-        console.log(user)
-        if (!user){
-            return response.status(401).send('error: Unauthorized')
-
+        console.log('key: '+key)
+        const userId = await redisClient.get(key)
+        console.log('userId: ' + userId)
+        if (!userId){
+            return response.status(401).send('error: Unauthorized1')
         }
-        */
-       //todo:
-       //Based on the query parameters parentId and page, return the list of file document
+        const parentId = request.query.parentId || 0
 
     }
 
 
     static async putPublish(request, response){
+        
+
         //retrieve user based on token
-        /*
+        
         const token = request.headers['x-token']
         const key = `auth_${token}`
-        const userId = redisClient.get(key)
-        const user = await dbClient.db.collection('users').findOne({_id: userId})
-        console.log(user)
-        if (!user){
-            return response.status(401).send('error: Unauthorized')
+        console.log('key: '+key)
+        const userId = await redisClient.get(key)
+        console.log('userId: ' + userId)
+        if (!userId){
+            return response.status(401).send('error: Unauthorized1')
+        }
+        //retrieve file
+        const id = request.params.id
+        console.log('id:'+ id)
+        const collection = dbClient.db.collection('files')
+        const file =  await collection.findOne({_id: new mongo.ObjectID(id) })
+        if (!file){
+            return response.status(404).send('error: Not found')
 
         }
-        */
-        const id = request.params.id
-        const files = dbClient.db.collection('files')
-        const file =  await files.findOne({ _id: id })
-        if (!file){
-            return response.status(401).send('error: Not found')
+        //publish file
+        file.isPublic = true
+        return response.status(200).send({
+            "id": file._id,
+            "userId": file.userId,
+            "name": file.name,
+            "type": file.type,
+            "isPublic":file.isPublic,
+            "parentId": file.parentId,
+        })
 
-        }        
-
-        console.log(file)
-        console.log(file.ops)
-        file.ops[0].isPublic = true
-        return response.status(200).send(file.ops)
     }
     static async putUnpublish(request, response){
         //retrieve user based on token
-        /*
+        
         const token = request.headers['x-token']
         const key = `auth_${token}`
-        const userId = redisClient.get(key)
-        const user = await dbClient.db.collection('users').findOne({_id: userId})
-        console.log(user)
-        if (!user){
-            return response.status(401).send('error: Unauthorized')
-
+        console.log('key: '+key)
+        const userId = await redisClient.get(key)
+        console.log('userId: ' + userId)
+        if (!userId){
+            return response.status(401).send('error: Unauthorized1')
         }
-        */
+        //retrieve file
         const id = request.params.id
-        const files = dbClient.db.collection('files')
-        const file =  await files.findOne({ _id: id })
+        console.log('id:'+ id)
+        const collection = dbClient.db.collection('files')
+        const file =  await collection.findOne({_id: new mongo.ObjectID(id) })
         if (!file){
-            return response.status(401).send('error: Not found')
+            return response.status(404).send('error: Not found')
 
         }
-
-        console.log(file)
-        console.log(file.ops)
-        file.ops[0].isPublic = false
-        return response.status(200).send(file.ops)
+        //unpublish file
+        file.isPublic = false
+        return response.status(200).send({
+            "id": file._id,
+            "userId": file.userId,
+            "name": file.name,
+            "type": file.type,
+            "isPublic":file.isPublic,
+            "parentId": file.parentId,
+        })
     }
 
     static async getFile(request, response){
-        const id = request.params.id
-        const files = dbClient.db.collection('files')
 
-        const file = await files.find({'_id': id})
+        //retrieve user based on token
+        
+        const token = request.headers['x-token']
+        const key = `auth_${token}`
+        console.log('key: '+key)
+        const userId = await redisClient.get(key)
+        console.log('userId: ' + userId)
+        if (!userId){
+            return response.status(401).send({"error": "Not found"})
+        }
+        //retrieve file
+        const id = request.params.id
+        console.log('id:'+ id)
+        const collection = dbClient.db.collection('files')
+        const file =  await collection.findOne({_id: new mongo.ObjectID(id) })
         if (!file){
-            return response.status(404).send({'error': "Not found"})
+            return response.status(404).send({"error": "Not found"})
+
         }
-        if (file.ops[0].isPublic === false){ //add user authenticate check
-            return response.status(404).send({'error': "Not found"})
+        //checks
+
+        if (file.isPublic === false && userId != file.userId.toString()){ //add user authenticate check
+            return response.status(404).send({"error": "Not found"})
         }
-        if (file.ops[0].type === 'folder'){
-            return response.status(400).send({'error': "A folder doesn't have content"})
+        if (file.type === 'folder'){
+            return response.status(400).send({"error": "A folder doesn't have content"})
         }
         if (!fs.existsSync(file.localPath)){
-            return response.status(404).send({'error': "Not found"})
+            return response.status(404).send({"error": "Not found"})
         }
-        //add cheeck for file not being locally present
         //return mime.contentType(file.ops.name)
         return response.status(200).send(fs.readFileSync(file.localPath))
 
