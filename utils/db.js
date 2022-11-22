@@ -5,24 +5,11 @@ const {MongoClient} = require('mongodb');
 
 class DBClient{
     constructor(){
-        const host = 'localhost';
-        const port = 27017;
-        const database = 'files_manager';
+        const host = process.env.DB_HOST || 'localhost';
+        const port = process.env.DB_PORT || 27017;
+        const database = process.env.DB_DATABASE || 'files_manager';
         this.connected = false
 
-        try{
-            host = process.env.DB_HOST
-        }catch(err){
-            
-        }
-        try{
-            port = process.env.DB_PORT
-        }catch(err){
-        }
-        try{
-            database = process.env.DB_DATABASE
-        }catch(err){
-        }
 
         const uri = `mongodb://${host}:${port}/${database}`;
         MongoClient.connect(uri, { useUnifiedTopology: true }, (err, client) => {

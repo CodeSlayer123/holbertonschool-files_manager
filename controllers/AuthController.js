@@ -16,8 +16,6 @@ class AuthController{
         const password = step2[1]
         console.log(email)
         console.log(sha1(password))
-        console.log(await dbClient.db.collection('users').find())
-        console.log("-------------------------------------------------")
         const user = await collection.findOne({email: email, password: sha1(password)})
         if (!user){
             return response.status(401).send({'error': 'Unauthorized'})
