@@ -7,18 +7,27 @@ const sha1 = require('sha1');
 class UsersController{
     static async postNew(request, response){
         //await dbClient.db.collection('users').remove()
-        if(!request.body.email){
-            return response.status(400).send({"error": "Missing email"})
-        }
-        if(!request.body.password){
-            return response.status(400).send({"error": "Missing password"})
-        }
-        if(await dbClient.db.collection('users').findOne({email: request.body.email})){
-            return response.status(400).send({"error": "Already exist"})
-        }
-        const newUser = await dbClient.db.collection('users').insertOne({email: request.body.email, password: sha1(request.body.password)})
-        console.log({ "id": newUser.insertedId, "email": request.body.email})
-        return response.status(201).send({"id": newUser.insertedId, "email": request.body.email})
+        const { email, password } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ error: 'Missing email' });
+      }
+
+      if (!password) {
+        return res.status(400).json({ error: 'Missing password' });
+      }
+
+      const user = await dbClient.db.collection('users').findOne({ email });
+      if (user) {
+        return res.status(400).json({ error: 'Already exist' });
+      }
+
+      const hash = sha1(password);
+      const newUser = await dbClient.db
+        .collection('users')
+        .insertOne({ email, password: hash });
+      return res.status(201).send({ id: newUser.insertedId, email });
+    
     }
 
     static getMe(request, response) {
