@@ -3,10 +3,16 @@ import redisClient from '../utils/redis';
 
 class AppController{
     static getStatus(request, response){
-        return response.status(200).send({ "redis": redisClient.isAlive(), "db": dbClient.isAlive()})
+        if (dbClient.isAlive() && redisClient.isAlive()){
+            return response.status(200).send({ redis: true, db: true})
+
+        }
+        return response.status(400).send('Redis and MongoDB not connected')
     }
-    static getStats(request, response){
-        return response.status(200).send({ "users": dbClient.nbUsers(), "files": dbClient.nbFiles()})
+    static async etStats(request, response){
+        const users = dbClient.nbUsers()
+        const files = dbClient.nbFiles()
+        return response.status(200).send({ users, files})
 
     }
 }
